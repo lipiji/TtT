@@ -1,5 +1,5 @@
 gamma=0.5
-dname="SIGHAN15"  # "SIGHAN15" "HybirdSet", "TtTSet"
+dname="HybirdSet"  # "SIGHAN15" "HybirdSet", "TtTSet"
 dpath="./data/"$dname
 bpath="./model/bert/"
 cpath="./ckpt/"$dname"_"$gamma"/"
