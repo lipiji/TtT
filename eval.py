@@ -305,7 +305,7 @@ def combine_result(gold_path, pred_path, out_path):
             o.writelines('\n')
 
 
-def eval_char(sources, labels, predicts, strict=True):
+def eval_char_sent(sources, labels, predicts, strict=True):
     corrected_char = 0
     wrong_char = 0
     corrected_sent = 0
@@ -364,23 +364,35 @@ def eval_char(sources, labels, predicts, strict=True):
         if correct == predict or true_detected_flag:
             accurate_detected_sent += 1
 
+
+    c_char_p = true_corrected_char/corrected_char
+    c_char_r = true_corrected_char/wrong_char
+    c_char_f1 = 2 * c_char_p * c_char_r / (c_char_p + c_char_r) 
+    d_char_p = true_detected_char/corrected_char
+    d_char_r = true_detected_char/wrong_char
+    d_char_f1 = 2 * d_char_p * d_char_r / (d_char_p + d_char_r)
+    
+    c_sent_p = true_corrected_sent/corrected_sent
+    c_sent_r = true_corrected_sent/wrong_sent
+    c_sent_f1 = 2 * c_sent_p * c_sent_r / (c_sent_p + c_sent_r)
+    c_sent_a = accurate_corrected_sent/all_sent
+    d_sent_p = true_detected_sent/corrected_sent
+    d_sent_r = true_detected_sent/wrong_sent
+    d_sent_f1 = 2 * d_sent_p * d_sent_r / (d_sent_p + d_sent_r)
+    d_sent_a = accurate_detected_sent/all_sent
+
     print("https://github.com/iqiyi/FASPell:")
-    print("corretion:")
-    print(f'char_p={true_corrected_char}/{corrected_char}')
-    print(f'char_r={true_corrected_char}/{wrong_char}')
-    print(f'sent_p={true_corrected_sent}/{corrected_sent}')
-    print(f'sent_r={true_corrected_sent}/{wrong_sent}')
-    print(f'sent_a={accurate_corrected_sent}/{all_sent}')
     print("detection:")
-    print(f'char_p={true_detected_char}/{corrected_char}')
-    print(f'char_r={true_detected_char}/{wrong_char}')
-    print(f'sent_p={true_detected_sent}/{corrected_sent}')
-    print(f'sent_r={true_detected_sent}/{wrong_sent}')
-    print(f'sent_a={accurate_detected_sent}/{all_sent}')
+    print("d_char_p=%.4f, d_char_r=%.4f, d_char_f1=%.4f"%(d_char_p, d_char_r, d_char_f1))
+    print("d_sent_a=%.4f, d_sent_p=%.4f, d_sent_r=%.4f, d_sent_f1=%.4f"%(d_sent_a, d_sent_p, d_sent_r, d_sent_f1))
+
+    print("corretion:")
+    print("c_char_p=%.4f, c_char_r=%.4f, c_char_f1=%.4f"%(c_char_p, c_char_r, c_char_f1))
+    print("c_sent_a=%.4f, c_sent_p=%.4f, c_sent_r=%.4f, c_sent_f1=%.4f"%(c_sent_a, c_sent_p, c_sent_r, c_sent_f1))
 
 
 
-def eval_sent(sources, labels, predicts):
+def eval_char(sources, labels, predicts):
     print("https://github.com/sunnyqiny/Confusionset-guided-Pointer-Networks-for-Chinese-Spelling-Check/blob/master/utils/evaluation_metrics.py:")
     TP = 0
     FP = 0
@@ -481,4 +493,4 @@ if __name__ == '__main__':
     #P, R, F = fmeasure_from_singlefile('tmp',"BMES")
     sources, labels, predicts = eval_prf(sys.argv[1])
     eval_char(sources, labels, predicts)
-    eval_sent(sources, labels, predicts) 
+    eval_char_sent(sources, labels, predicts) 
