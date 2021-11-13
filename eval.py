@@ -304,7 +304,181 @@ def combine_result(gold_path, pred_path, out_path):
                 o.writelines(out_str + '\n')
             o.writelines('\n')
 
+
+def eval_char(sources, labels, predicts, strict=True):
+    corrected_char = 0
+    wrong_char = 0
+    corrected_sent = 0
+    wrong_sent = 0
+    true_corrected_char = 0
+    true_corrected_sent = 0
+    true_detected_char = 0
+    true_detected_sent = 0
+    accurate_detected_sent = 0
+    accurate_corrected_sent = 0
+    all_sent = 0
+
+    for wrong, correct, predict in zip(sources, labels, predicts):
+        all_sent += 1
+        falsely_corrected_char_in_sentence = 0
+        falsely_detected_char_in_sentence = 0
+        true_corrected_char_in_sentence = 0
+        
+        wrong_num = 0
+        corrected_num = 0
+        original_wrong_num = 0
+        true_detected_char_in_sentence = 0
+
+        for c, w, p in zip(correct, wrong, predict):
+            if c != p:
+                wrong_num += 1
+            if w != p:
+                corrected_num += 1
+                if c == p:
+                    true_corrected_char += 1
+                if w != c:
+                    true_detected_char += 1
+                    true_detected_char_in_sentence += 1
+            if c != w:
+                original_wrong_num += 1
+
+        corrected_char += corrected_num
+        wrong_char += original_wrong_num
+        if original_wrong_num != 0:
+            wrong_sent += 1
+        if corrected_num != 0 and wrong_num == 0:
+            true_corrected_sent += 1
+
+        if corrected_num != 0:
+            corrected_sent += 1
+
+        if strict:
+            true_detected_flag = (true_detected_char_in_sentence == original_wrong_num and original_wrong_num != 0 and corrected_num == true_detected_char_in_sentence)
+        else:
+            true_detected_flag = (corrected_num != 0 and original_wrong_num != 0)
+        # if corrected_num != 0 and original_wrong_num != 0:
+        if true_detected_flag:
+            true_detected_sent += 1
+        if correct == predict:
+            accurate_corrected_sent += 1
+        if correct == predict or true_detected_flag:
+            accurate_detected_sent += 1
+
+    print("https://github.com/iqiyi/FASPell:")
+    print("corretion:")
+    print(f'char_p={true_corrected_char}/{corrected_char}')
+    print(f'char_r={true_corrected_char}/{wrong_char}')
+    print(f'sent_p={true_corrected_sent}/{corrected_sent}')
+    print(f'sent_r={true_corrected_sent}/{wrong_sent}')
+    print(f'sent_a={accurate_corrected_sent}/{all_sent}')
+    print("detection:")
+    print(f'char_p={true_detected_char}/{corrected_char}')
+    print(f'char_r={true_detected_char}/{wrong_char}')
+    print(f'sent_p={true_detected_sent}/{corrected_sent}')
+    print(f'sent_r={true_detected_sent}/{wrong_sent}')
+    print(f'sent_a={accurate_detected_sent}/{all_sent}')
+
+
+
+def eval_sent(sources, labels, predicts):
+    print("https://github.com/sunnyqiny/Confusionset-guided-Pointer-Networks-for-Chinese-Spelling-Check/blob/master/utils/evaluation_metrics.py:")
+    TP = 0
+    FP = 0
+    FN = 0
+    all_predict_true_index = []
+    all_gold_index = []
+    for item in zip(sources, labels, predicts):
+        src, tgt, predict = item
+        gold_index = []
+        each_true_index = []
+        for i in range(len(src)):
+            if src[i] == tgt[i]:
+                continue
+            else:
+                gold_index.append(i)
+        all_gold_index.append(gold_index)
+        predict_index = []
+        for i in range(len(src)):
+            if i >= len(predict):
+                predict_index.append(i)
+                continue
+            if src[i] == predict[i]:
+                continue
+            else:
+                predict_index.append(i)
+
+        for i in predict_index:
+            if i in gold_index:
+                TP += 1
+                each_true_index.append(i)
+            else:
+                FP += 1
+        for i in gold_index:
+            if i in predict_index:
+                continue
+            else:
+                FN += 1
+        all_predict_true_index.append(each_true_index)
+
+    # For the detection Precision, Recall and F1
+    detection_precision = TP / (TP + FP) if (TP+FP) > 0 else 0
+    detection_recall = TP / (TP + FN) if (TP+FN) > 0 else 0
+    detection_f1 = 2 * (detection_precision * detection_recall) / (detection_precision + detection_recall) if (detection_precision + detection_recall) > 0 else 0
+    print("The detection result is precision={}, recall={} and F1={}".format(detection_precision, detection_recall, detection_f1))
+
+    TP = 0
+    FP = 0
+    FN = 0
+
+    for i in range(len( all_predict_true_index)):
+        # we only detect those correctly detected location, which is a different from the common metrics since
+        # we wanna to see the precision improve by using the confusionset
+        if len(all_predict_true_index[i]) > 0:
+            predict_words = []
+            for j in all_predict_true_index[i]:
+                predict_words.append(predicts[i][j])
+                if labels[i][j] == predicts[i][j]:
+                    TP += 1
+                else:
+                    FP += 1
+            for j in all_gold_index[i]:
+                if labels[i][j]  in predict_words:
+                    continue
+                else:
+                    FN += 1
+
+    # For the correction Precision, Recall and F1
+    correction_precision = TP / (TP + FP) if (TP+FP) > 0 else 0
+    correction_recall = TP / (TP + FN) if (TP+FN) > 0 else 0
+    correction_f1 = 2 * (correction_precision * correction_recall) / (correction_precision + correction_recall) if (correction_precision + correction_recall) > 0 else 0
+    print("The correction  result is precision={}, recall={} and F1={}".format(correction_precision, correction_recall, correction_f1))
+
+    return detection_f1, correction_f1
+
+
+def eval_prf(file_with_source_label_pred):
+    sources = []
+    labels = []
+    predicts = []
+    with open(file_with_source_label_pred) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                fs = line.split("\t")
+                if len(fs) != 3:
+                    print("ERROR eval")
+                sources.append(fs[0])
+                labels.append(fs[2])
+                predicts.append(fs[1])
+
+    return sources, labels, predicts
+    
+
+
+
 if __name__ == '__main__':
-    combine_result(sys.argv[1], sys.argv[2], 'tmp')
-    P, R, F = fmeasure_from_singlefile('tmp',"BMES")
-    print (P, R, F)
+    #combine_result(sys.argv[1], sys.argv[2], 'tmp')
+    #P, R, F = fmeasure_from_singlefile('tmp',"BMES")
+    sources, labels, predicts = eval_prf(sys.argv[1])
+    eval_char(sources, labels, predicts)
+    eval_sent(sources, labels, predicts) 
