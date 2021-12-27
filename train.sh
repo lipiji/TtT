@@ -7,7 +7,7 @@ cpath="./ckpt/"$dname"_"$gamma"/"
 mkdir -p $cpath
 
 python -u main.py \
-    --bert_path  $bpath/bert_1559999\
+    --bert_path  $bpath/bert.ckpt\
     --bert_vocab $bpath/vocab.txt \
     --train_data $dpath/train.txt \
     --dev_data $dpath/test.txt\
