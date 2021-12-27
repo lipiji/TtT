@@ -1,7 +1,7 @@
 # TtT
 code for our ACL2021 paper "Tail-to-Tail Non-Autoregressive Sequence Prediction for Chinese Grammatical Error Correction"
 
-The pretrained BERT model is here: 
+The pretrained BERT model can be downloaded from: https://drive.google.com/file/d/1gX9YYcGpR44BsUgoJDtbWqV-4PsaWpq1/view?usp=sharing
 
 Training:
 ```
