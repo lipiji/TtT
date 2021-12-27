@@ -9,5 +9,5 @@ Training:
 ```
 
 Tips to reproduce the results:
-- More epochs: more than 250;
+- More epochs: more than 200;
 - Larger batchsize on GPUs such as V100.
